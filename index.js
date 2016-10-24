@@ -26,25 +26,32 @@ const getPathToProfile = (shell) => {
 };
 
 const getEnvironmentVariables = () => {
-	let profileName = getPathToProfile(process.env && process.env.SHELL && path.basename(process.env.SHELL) || "bash");
+	const shell = process.env && process.env.SHELL && path.basename(process.env.SHELL) || "bash",
+		pathToShell = process.env && process.env.SHELL  || "/bin/bash";
 
-	let bashEnv = childProcess.execSync(`${process.env.SHELL || "/bin/bash"} -c "source ${profileName} && env"`).toString();
+	const profileName = getPathToProfile(shell);
 
-	let bashVars = {};
+	if (profileName) {
+		const sourcedEnvironmentVars = childProcess.execSync(`${pathToShell} -c "source ${profileName} && env"`).toString();
 
-	bashEnv.split('\n').forEach(row => {
-		// Environment variables cannot have = in their names, so we are safe with non-greedy regex.
-		// Do not trim at the end as variable values may have space(s) at the end.
-		let match = _.trimStart(row).match(/^(.+?)=(.*?$)/);
+		let environmentVariables = {};
 
-		if (match) {
-			bashVars[match[1].trim()] = match[2];
-		} else {
-			console.log(row + " does not match regex.");
-		}
-	});
+		sourcedEnvironmentVars.split('\n').forEach(row => {
+			// Environment variables cannot have = in their names, so we are safe with non-greedy regex.
+			// Do not trim at the end as variable values may have space(s) at the end.
+			let match = _.trimStart(row).match(/^(.+?)=(.*?$)/);
 
-	return bashVars;
+			if (match) {
+				environmentVariables[match[1].trim()] = match[2];
+			} else {
+				console.log(row + " does not match regex.");
+			}
+		});
+
+		return environmentVariables;
+	}
+
+	return process.env;
 };
 
 module.exports = {

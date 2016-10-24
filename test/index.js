@@ -61,6 +61,14 @@ describe("getEnvironmentVariables", () => {
 		assert.isTrue(loggedWarnings[0].indexOf("does not match") !== -1);
 	});
 
+	it("returns process.env when none of the profiles exists", () => {
+		let fs = require("fs");
+		fs.existsSync = (filePath) => false;
+
+		const actualResult = require("../index").getEnvironmentVariables();
+		assert.deepEqual(actualResult, process.env);
+	});
+
 	describe("uses correct order of profiles", () => {
 		const profileOrder = [
 			".bash_profile",
@@ -101,11 +109,10 @@ describe("getEnvironmentVariables", () => {
 		});
 	});
 
-	it("when default shell is not set, uses bash", () => {
-		let shell = process.env.SHELL;
-		process.env.SHELL = '';
+	const verifySourceCommand = (profileName, shellEnv) => {
+		let originalShellEnv = process.env.SHELL;
+		process.env.SHELL = shellEnv;
 
-		const profileName = ".bash_profile";
 		let fs = require("fs");
 		fs.existsSync = (filePath) => {
 			return _.endsWith(filePath, profileName);
@@ -129,10 +136,23 @@ describe("getEnvironmentVariables", () => {
 
 		const actualResult = require("../index").getEnvironmentVariables();
 
-		process.env.SHELL = shell;
+		process.env.SHELL = originalShellEnv;
 
 		assert.deepEqual(actualResult, expectedVariables);
 
 		assert.isTrue(passedCommandArgument.indexOf(profileName) !== -1);
+		assert.isTrue(passedCommandArgument.indexOf(shellEnv) !== -1);
+	};
+
+	it("when default shell is not set, uses bash", () => {
+		verifySourceCommand(".bash_profile", '');
+	});
+
+	it("uses custom shell, when bash is not default", () => {
+		verifySourceCommand(".zshrc", "/bin/zsh");
+	});
+
+	it("uses custom shell, when bash is not default and default shell is not full path", () => {
+		verifySourceCommand(".zshrc", "zsh");
 	});
 });
