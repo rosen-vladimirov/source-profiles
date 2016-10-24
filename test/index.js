@@ -1,3 +1,5 @@
+"use strict";
+
 const _ = require("lodash"),
 	assert = require("chai").assert;
 
