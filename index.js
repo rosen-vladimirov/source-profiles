@@ -18,7 +18,7 @@ const getPathToProfile = (shell) => {
 	let currentProfileOrder = profileOrder.map(p => p.replace("bash", shell)) //in case the default shell is not bash
 		.map(p => path.join(process.env.HOME, p));
 
-	for(let profileName of currentProfileOrder) {
+	for (let profileName of currentProfileOrder) {
 		if (fs.existsSync(profileName)) {
 			return profileName;
 		}
@@ -40,7 +40,7 @@ const getEnvironmentVariables = () => {
 		if (match) {
 			bashVars[match[1].trim()] = match[2];
 		} else {
-			console.log(row + " does not match regex");
+			console.log(row + " does not match regex.");
 		}
 	});
 

@@ -4,6 +4,7 @@ const _ = require("lodash"),
 	assert = require("chai").assert;
 
 describe("getEnvironmentVariables", () => {
+
 	it("returns correct variables", () => {
 		let fs = require("fs");
 		// Mock just to prevent multiple file system calls.
@@ -45,14 +46,18 @@ describe("getEnvironmentVariables", () => {
 		};
 
 		let loggedWarnings = [];
+
 		const originalConsoleLog = console.log;
 		console.log = (data) => {
 			loggedWarnings.push(data);
 		};
 
 		const actualResult = require("../index").getEnvironmentVariables();
+
 		console.log = originalConsoleLog;
+
 		assert.deepEqual(loggedWarnings.length, 1);
+
 		assert.isTrue(loggedWarnings[0].indexOf("does not match") !== -1);
 	});
 
@@ -65,7 +70,7 @@ describe("getEnvironmentVariables", () => {
 		];
 
 		_.each(profileOrder, profileName => {
-			it (`when ${profileName} exists it's always used`, () => {
+			it(`when ${profileName} exists it's used`, () => {
 				let fs = require("fs");
 				fs.existsSync = (filePath) => {
 					return _.endsWith(filePath, profileName);
@@ -96,7 +101,7 @@ describe("getEnvironmentVariables", () => {
 		});
 	});
 
-	it ("when default shell is not set, uses bash", () => {
+	it("when default shell is not set, uses bash", () => {
 		let shell = process.env.SHELL;
 		process.env.SHELL = '';
 
