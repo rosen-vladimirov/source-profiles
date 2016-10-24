@@ -1,0 +1,29 @@
+{
+  "name": "source-profiles",
+  "version": "1.0.0",
+  "description": "Code that sources correct profiles, so that you can use all Environment variables declared in them.",
+  "main": "index.js",
+  "scripts": {
+    "test": "istanbul cover node_modules/mocha/bin/_mocha -- --recursive --reporter spec-xunit-file --timeout 150000 test/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rosen-vladimirov/source-profiles.git"
+  },
+  "keywords": [
+    "source",
+    "bash",
+    "profile"
+  ],
+  "author": "Rosen Vladimirov",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/rosen-vladimirov/source-profiles/issues"
+  },
+  "homepage": "https://github.com/rosen-vladimirov/source-profiles#readme",
+  "devDependencies": {
+    "istanbul": "0.4.5",
+    "mocha": "3.1.2",
+    "spec-xunit-file": "0.0.1-3"
+  }
+}
