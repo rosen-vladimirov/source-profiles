@@ -7,7 +7,6 @@ describe("getEnvironmentVariables", () => {
 
 	it("returns correct variables", () => {
 		let fs = require("fs");
-		// Mock just to prevent multiple file system calls.
 		fs.existsSync = (filePath) => true;
 
 		const expectedVariables = {
@@ -31,7 +30,6 @@ describe("getEnvironmentVariables", () => {
 
 	it("prints warning when environment variable does not match expected format", () => {
 		let fs = require("fs");
-		// Mock just to prevent multiple file system calls.
 		fs.existsSync = (filePath) => true;
 
 		const expectedVariables = {
@@ -67,6 +65,52 @@ describe("getEnvironmentVariables", () => {
 
 		const actualResult = require("../index").getEnvironmentVariables();
 		assert.deepEqual(actualResult, process.env);
+	});
+
+	const emptyTestData = [
+		null,
+		undefined,
+		''
+	];
+
+	_.each(emptyTestData, value => {
+		it(`returns process.env when child process does not return any data (${value})`, () => {
+			let fs = require("fs");
+			fs.existsSync = (filePath) => true;
+
+			let childProcess = require("child_process");
+			childProcess.execSync = (command) => value;
+
+			const actualResult = require("../index").getEnvironmentVariables();
+			assert.deepEqual(actualResult, process.env);
+		});
+	});
+
+	it(`returns process.env when child process throws`, () => {
+		let fs = require("fs");
+		fs.existsSync = (filePath) => true;
+
+		let childProcess = require("child_process");
+		const message = "execSyncThrows";
+		childProcess.execSync = (command) => {
+			throw new Error(message);
+		};
+
+		const originalConsoleErr = console.error;
+		let loggedErrors = [];
+		console.error = (data) => {
+			loggedErrors.push(data);
+		};
+
+		const actualResult = require("../index").getEnvironmentVariables();
+
+		console.error = originalConsoleErr;
+
+		assert.deepEqual(actualResult, process.env);
+
+		assert.deepEqual(loggedErrors.length, 1);
+
+		assert.deepEqual(loggedErrors[0], message);
 	});
 
 	describe("uses correct order of profiles", () => {

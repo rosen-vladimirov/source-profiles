@@ -32,23 +32,29 @@ const getEnvironmentVariables = () => {
 	const profileName = getPathToProfile(shell);
 
 	if (profileName) {
-		const sourcedEnvironmentVars = childProcess.execSync(`${pathToShell} -c "source ${profileName} && env"`).toString();
+		try {
+			const sourcedEnvironmentVars = childProcess.execSync(`${pathToShell} -c "source ${profileName} && env"`);
 
-		let environmentVariables = {};
+			if (sourcedEnvironmentVars) {
+				let environmentVariables = {};
 
-		sourcedEnvironmentVars.split('\n').forEach(row => {
-			// Environment variables cannot have = in their names, so we are safe with non-greedy regex.
-			// Do not trim at the end as variable values may have space(s) at the end.
-			let match = _.trimStart(row).match(/^(.+?)=(.*?$)/);
+				sourcedEnvironmentVars.toString().split('\n').forEach(row => {
+					// Environment variables cannot have = in their names, so we are safe with non-greedy regex.
+					// Do not trim at the end as variable values may have space(s) at the end.
+					let match = _.trimStart(row).match(/^(.+?)=(.*?$)/);
 
-			if (match) {
-				environmentVariables[match[1].trim()] = match[2];
-			} else {
-				console.log(row + " does not match regex.");
+					if (match) {
+						environmentVariables[match[1].trim()] = match[2];
+					} else {
+						console.log(row + " does not match regex.");
+					}
+				});
+
+				return environmentVariables;
 			}
-		});
-
-		return environmentVariables;
+		} catch(err) {
+			console.error(err.message);
+		}
 	}
 
 	return process.env;
@@ -56,4 +62,4 @@ const getEnvironmentVariables = () => {
 
 module.exports = {
 	getEnvironmentVariables: getEnvironmentVariables
-}
+};
