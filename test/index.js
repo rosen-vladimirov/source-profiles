@@ -3,7 +3,17 @@
 const _ = require("lodash"),
 	assert = require("chai").assert;
 
+let processWrapper = require("../lib/process-wrapper");
+const originalGetProcessPlatform = processWrapper.getProcessPlatform;
+
 describe("getEnvironmentVariables", () => {
+	beforeEach(() => {
+		processWrapper.getProcessPlatform = () => "tests";
+	});
+
+	after(() => {
+		processWrapper.getProcessPlatform = originalGetProcessPlatform;
+	});
 
 	it("returns correct variables", () => {
 		let fs = require("fs");
@@ -62,6 +72,27 @@ describe("getEnvironmentVariables", () => {
 	it("returns process.env when none of the profiles exists", () => {
 		let fs = require("fs");
 		fs.existsSync = (filePath) => false;
+
+		const actualResult = require("../index").getEnvironmentVariables();
+		assert.deepEqual(actualResult, process.env);
+	});
+
+	it("returns process.env on windows", () => {
+		let fs = require("fs");
+		fs.existsSync = (filePath) => true;
+
+		const expectedVariables = {
+			"VAR1": "1"
+		};
+
+		let childProcess = require("child_process");
+		childProcess.execSync = (command) => {
+			return _.map(expectedVariables, (value, key) => {
+				return `${key}=${value}`;
+			}).join('\n');
+		};
+
+		processWrapper.getProcessPlatform = () => "win32";
 
 		const actualResult = require("../index").getEnvironmentVariables();
 		assert.deepEqual(actualResult, process.env);
