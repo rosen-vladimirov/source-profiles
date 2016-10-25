@@ -5,6 +5,7 @@ const _ = require("lodash"),
 
 let processWrapper = require("../lib/process-wrapper");
 const originalGetProcessPlatform = processWrapper.getProcessPlatform;
+const index = require("../lib/index");
 
 describe("getEnvironmentVariables", () => {
 	beforeEach(() => {
@@ -34,7 +35,7 @@ describe("getEnvironmentVariables", () => {
 			}).join('\n');
 		};
 
-		const actualResult = require("../index").getEnvironmentVariables();
+		const actualResult = index.getEnvironmentVariables();
 		assert.deepEqual(actualResult, expectedVariables);
 	});
 
@@ -60,7 +61,7 @@ describe("getEnvironmentVariables", () => {
 			loggedWarnings.push(data);
 		};
 
-		const actualResult = require("../index").getEnvironmentVariables();
+		const actualResult = index.getEnvironmentVariables();
 
 		console.log = originalConsoleLog;
 
@@ -73,7 +74,7 @@ describe("getEnvironmentVariables", () => {
 		let fs = require("fs");
 		fs.existsSync = (filePath) => false;
 
-		const actualResult = require("../index").getEnvironmentVariables();
+		const actualResult = index.getEnvironmentVariables();
 		assert.deepEqual(actualResult, process.env);
 	});
 
@@ -94,7 +95,7 @@ describe("getEnvironmentVariables", () => {
 
 		processWrapper.getProcessPlatform = () => "win32";
 
-		const actualResult = require("../index").getEnvironmentVariables();
+		const actualResult = index.getEnvironmentVariables();
 		assert.deepEqual(actualResult, process.env);
 	});
 
@@ -112,7 +113,7 @@ describe("getEnvironmentVariables", () => {
 			let childProcess = require("child_process");
 			childProcess.execSync = (command) => value;
 
-			const actualResult = require("../index").getEnvironmentVariables();
+			const actualResult = index.getEnvironmentVariables();
 			assert.deepEqual(actualResult, process.env);
 		});
 	});
@@ -133,7 +134,7 @@ describe("getEnvironmentVariables", () => {
 			loggedErrors.push(data);
 		};
 
-		const actualResult = require("../index").getEnvironmentVariables();
+		const actualResult = index.getEnvironmentVariables();
 
 		console.error = originalConsoleErr;
 
@@ -174,7 +175,7 @@ describe("getEnvironmentVariables", () => {
 					}).join('\n');
 				};
 
-				const actualResult = require("../index").getEnvironmentVariables();
+				const actualResult = index.getEnvironmentVariables();
 
 				assert.deepEqual(actualResult, expectedVariables);
 
@@ -209,7 +210,7 @@ describe("getEnvironmentVariables", () => {
 			}).join('\n');
 		};
 
-		const actualResult = require("../index").getEnvironmentVariables();
+		const actualResult = index.getEnvironmentVariables();
 
 		process.env.SHELL = originalShellEnv;
 
