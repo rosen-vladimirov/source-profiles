@@ -1,0 +1,11 @@
+language: node_js
+node_js:
+- '4'
+git:
+  submodules: false
+before_script:
+- npm install grunt-cli
+- npm install
+script:
+- npm pack
+- npm test

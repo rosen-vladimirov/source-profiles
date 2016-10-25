@@ -34,3 +34,5 @@ npm-debug.log
 node_modules
 xunit.xml
 
+coverage
+.travis.yml
