@@ -25,10 +25,10 @@ describe("getEnvironmentVariables", () => {
 		childProcess.execSync = execSync;
 	});
 
-	describe("uses /etc/path", () => {
+	describe("uses /etc/paths", () => {
 		it("when no matching profile is found", () => {
 			let fs = require("fs");
-			fs.existsSync = (filePath) => filePath === "/etc/path";
+			fs.existsSync = (filePath) => filePath === "/etc/paths";
 			fs.readFileSync = (filePath, encoding) => 'path1\npath2\npath3';
 
 			const actualResult = index.getEnvironmentVariables();
@@ -105,7 +105,7 @@ describe("getEnvironmentVariables", () => {
 	it("returns correct variables", () => {
 		let fs = require("fs");
 		fs.existsSync = (filePath) => {
-			return filePath !== "/etc/path";
+			return filePath !== "/etc/paths";
 		};
 
 		const expectedVariables = {
