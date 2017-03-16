@@ -27,46 +27,9 @@ describe("getEnvironmentVariables", () => {
 	});
 
 	describe(`uses ${etcPaths}`, () => {
-		it("when no matching profile is found", () => {
+		it("when there's PATH variable in it", () => {
 			let fs = require("fs");
 			fs.existsSync = (filePath) => filePath === etcPaths;
-			fs.readFileSync = (filePath, encoding) => 'path1\npath2\npath3';
-
-			const actualResult = index.getEnvironmentVariables();
-			assert.isTrue(actualResult.PATH.indexOf("path1:path2:path3") !== -1);
-			assert.deepEqual(actualResult, process.env);
-		});
-
-		it("when matching profile is found", () => {
-			let fs = require("fs");
-			fs.existsSync = (filePath) => true;
-			fs.readFileSync = (filePath, encoding) => 'path1\npath2\npath3';
-
-			const expectedVariables = {
-				"VAR1": "1",
-				"VAR2": "2",
-				"VAR4": "1=2=3=4",
-				"VAR5": "   1 2   3 ",
-				"VAR6": "1 2 3"
-			};
-
-			let childProcess = require("child_process");
-			childProcess.execSync = (command) => {
-				return _.map(expectedVariables, (value, key) => {
-					return `${key}=${value}`;
-				}).join('\n');
-			};
-
-			const actualResult = index.getEnvironmentVariables();
-
-			expectedVariables.PATH = "path1:path2:path3";
-
-			assert.deepEqual(actualResult, expectedVariables);
-		});
-
-		it("when matching profile is found and there's PATH variable in it", () => {
-			let fs = require("fs");
-			fs.existsSync = (filePath) => true;
 			fs.readFileSync = (filePath, encoding) => 'path1\npath2\npath3';
 
 			const expectedVariables = {
@@ -90,16 +53,6 @@ describe("getEnvironmentVariables", () => {
 			expectedVariables.PATH = "path0:path1:path2:path3";
 
 			assert.deepEqual(actualResult, expectedVariables);
-		});
-
-		it(`when no matching profile is found and ${etcPaths} is empty.`, () => {
-			let fs = require("fs");
-			fs.existsSync = (filePath) => filePath === etcPaths;
-			fs.readFileSync = (filePath, encoding) => '';
-
-			const actualResult = index.getEnvironmentVariables();
-			assert.isTrue(actualResult.PATH.indexOf("path1:path2:path3") !== -1);
-			assert.deepEqual(actualResult, process.env);
 		});
 	});
 
@@ -159,14 +112,6 @@ describe("getEnvironmentVariables", () => {
 		assert.deepEqual(loggedWarnings.length, 1);
 
 		assert.isTrue(loggedWarnings[0].indexOf("does not match") !== -1);
-	});
-
-	it("returns process.env when none of the profiles exists", () => {
-		let fs = require("fs");
-		fs.existsSync = (filePath) => false;
-
-		const actualResult = index.getEnvironmentVariables();
-		assert.deepEqual(actualResult, process.env);
 	});
 
 	it("returns process.env on windows", () => {
@@ -240,54 +185,9 @@ describe("getEnvironmentVariables", () => {
 		assert.deepEqual(loggedErrors[0], message);
 	});
 
-	describe("uses correct order of profiles", () => {
-		const profileOrder = [
-			".bash_profile",
-			".bash_login",
-			".profile",
-			".bashrc"
-		];
-
-		_.each(profileOrder, profileName => {
-			it(`when ${profileName} exists it's used`, () => {
-				let fs = require("fs");
-				fs.existsSync = (filePath) => {
-					return _.endsWith(filePath, profileName);
-				};
-
-				const expectedVariables = {
-					"VAR1": "1"
-				};
-
-				let passedCommandArgument;
-
-				let childProcess = require("child_process");
-
-				childProcess.execSync = (command) => {
-					passedCommandArgument = command;
-					return _.map(expectedVariables, (value, key) => {
-						return `${key}=${value}`;
-					}).join('\n');
-				};
-
-				const actualResult = index.getEnvironmentVariables();
-
-				assert.deepEqual(actualResult, expectedVariables);
-
-				assert.isTrue(passedCommandArgument.indexOf(profileName) !== -1);
-			});
-
-		});
-	});
-
-	const verifySourceCommand = (profileName, shellEnv) => {
+	const verifySourceCommand = (shellEnv) => {
 		let originalShellEnv = process.env.SHELL;
 		process.env.SHELL = shellEnv;
-
-		let fs = require("fs");
-		fs.existsSync = (filePath) => {
-			return _.endsWith(filePath, profileName);
-		};
 
 		const expectedVariables = {
 			"VAR1": "1"
@@ -311,7 +211,6 @@ describe("getEnvironmentVariables", () => {
 
 		assert.deepEqual(actualResult, expectedVariables);
 
-		assert.isTrue(passedCommandArgument.indexOf(profileName) !== -1);
 		assert.isTrue(passedCommandArgument.indexOf(shellEnv) !== -1);
 	};
 
