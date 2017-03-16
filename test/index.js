@@ -8,6 +8,7 @@ let childProcess = require("child_process");
 let processWrapper = require("../lib/process-wrapper");
 const originalGetProcessPlatform = processWrapper.getProcessPlatform;
 const index = require("../lib/index");
+const etcPaths = "/etc/paths";
 
 describe("getEnvironmentVariables", () => {
 	const readFileSync = fs.readFileSync;
@@ -25,10 +26,10 @@ describe("getEnvironmentVariables", () => {
 		childProcess.execSync = execSync;
 	});
 
-	describe("uses /etc/paths", () => {
+	describe(`uses ${etcPaths}`, () => {
 		it("when no matching profile is found", () => {
 			let fs = require("fs");
-			fs.existsSync = (filePath) => filePath === "/etc/paths";
+			fs.existsSync = (filePath) => filePath === etcPaths;
 			fs.readFileSync = (filePath, encoding) => 'path1\npath2\npath3';
 
 			const actualResult = index.getEnvironmentVariables();
@@ -91,9 +92,9 @@ describe("getEnvironmentVariables", () => {
 			assert.deepEqual(actualResult, expectedVariables);
 		});
 
-		it("when no matching profile is found and /etc/path is empty.", () => {
+		it(`when no matching profile is found and ${etcPaths} is empty.`, () => {
 			let fs = require("fs");
-			fs.existsSync = (filePath) => filePath === "/etc/path";
+			fs.existsSync = (filePath) => filePath === etcPaths;
 			fs.readFileSync = (filePath, encoding) => '';
 
 			const actualResult = index.getEnvironmentVariables();
@@ -105,7 +106,7 @@ describe("getEnvironmentVariables", () => {
 	it("returns correct variables", () => {
 		let fs = require("fs");
 		fs.existsSync = (filePath) => {
-			return filePath !== "/etc/paths";
+			return filePath !== etcPaths;
 		};
 
 		const expectedVariables = {
@@ -130,7 +131,7 @@ describe("getEnvironmentVariables", () => {
 	it("prints warning when environment variable does not match expected format", () => {
 		let fs = require("fs");
 		fs.existsSync = (filePath) => {
-			return filePath !== "/etc/path";
+			return filePath !== etcPaths;
 		};
 
 		const expectedVariables = {
@@ -199,7 +200,7 @@ describe("getEnvironmentVariables", () => {
 		it(`returns process.env when child process does not return any data (${value})`, () => {
 			let fs = require("fs");
 			fs.existsSync = (filePath) => {
-				return filePath !== "/etc/path";
+				return filePath !== etcPaths;
 			};
 
 			let childProcess = require("child_process");
@@ -213,7 +214,7 @@ describe("getEnvironmentVariables", () => {
 	it(`returns process.env when child process throws`, () => {
 		let fs = require("fs");
 		fs.existsSync = (filePath) => {
-			return filePath !== "/etc/path";
+			return filePath !== etcPaths;
 		};
 
 		let childProcess = require("child_process");
