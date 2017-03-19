@@ -26,6 +26,16 @@ describe("getEnvironmentVariables", () => {
 		childProcess.execSync = execSync;
 	});
 
+	const assertExpecteVarsInResult = (actualResult, expectedVariables) => {
+		_.each(expectedVariables, (varValue, varKey) => {
+			if (varKey === "PATH") {
+				assert.isTrue(actualResult[varKey].indexOf(varValue) !== -1);
+			} else {
+				assert.deepEqual(actualResult[varKey], varValue);
+			}
+		});
+	};
+
 	describe(`uses ${etcPaths}`, () => {
 		it("when there's PATH variable in it", () => {
 			let fs = require("fs");
@@ -51,8 +61,7 @@ describe("getEnvironmentVariables", () => {
 			const actualResult = index.getEnvironmentVariables();
 
 			expectedVariables.PATH = "path0:path1:path2:path3";
-
-			assert.deepEqual(actualResult, expectedVariables);
+			assertExpecteVarsInResult(actualResult, expectedVariables);
 		});
 	});
 
@@ -78,7 +87,7 @@ describe("getEnvironmentVariables", () => {
 		};
 
 		const actualResult = index.getEnvironmentVariables();
-		assert.deepEqual(actualResult, expectedVariables);
+		assertExpecteVarsInResult(actualResult, expectedVariables);
 	});
 
 	it("prints warning when environment variable does not match expected format", () => {
@@ -109,7 +118,7 @@ describe("getEnvironmentVariables", () => {
 
 		console.log = originalConsoleLog;
 
-		assert.deepEqual(loggedWarnings.length, 1);
+		assert.deepEqual(loggedWarnings.length, 5);
 
 		assert.isTrue(loggedWarnings[0].indexOf("does not match") !== -1);
 	});
@@ -180,7 +189,7 @@ describe("getEnvironmentVariables", () => {
 
 		assert.deepEqual(actualResult, process.env);
 
-		assert.deepEqual(loggedErrors.length, 1);
+		assert.deepEqual(loggedErrors.length, 5);
 
 		assert.deepEqual(loggedErrors[0], message);
 	});
@@ -209,8 +218,8 @@ describe("getEnvironmentVariables", () => {
 
 		process.env.SHELL = originalShellEnv;
 
-		assert.deepEqual(actualResult, expectedVariables);
-
+		// assert.deepEqual(actualResult, expectedVariables);
+		assertExpecteVarsInResult(actualResult, expectedVariables);
 		assert.isTrue(passedCommandArgument.indexOf(shellEnv) !== -1);
 	};
 
