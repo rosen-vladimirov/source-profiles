@@ -7,6 +7,7 @@ let fs = require("fs");
 let childProcess = require("child_process");
 let processWrapper = require("../lib/process-wrapper");
 const originalGetProcessPlatform = processWrapper.getProcessPlatform;
+const originalGetEnv = processWrapper.getEnv;
 const index = require("../lib/index");
 const etcPaths = "/etc/paths";
 
@@ -17,24 +18,16 @@ describe("getEnvironmentVariables", () => {
 
 	beforeEach(() => {
 		processWrapper.getProcessPlatform = () => "tests";
+		processWrapper.getEnv = () => ({});
 	});
 
 	after(() => {
 		processWrapper.getProcessPlatform = originalGetProcessPlatform;
+		processWrapper.getEnv = originalGetEnv;
 		fs.readFileSync = readFileSync;
 		fs.exists = exists;
 		childProcess.execSync = execSync;
 	});
-
-	const assertExpecteVarsInResult = (actualResult, expectedVariables) => {
-		_.each(expectedVariables, (varValue, varKey) => {
-			if (varKey === "PATH") {
-				assert.isTrue(actualResult[varKey].indexOf(varValue) !== -1);
-			} else {
-				assert.deepEqual(actualResult[varKey], varValue);
-			}
-		});
-	};
 
 	describe(`uses ${etcPaths}`, () => {
 		it("when there's PATH variable in it", () => {
@@ -61,7 +54,7 @@ describe("getEnvironmentVariables", () => {
 			const actualResult = index.getEnvironmentVariables();
 
 			expectedVariables.PATH = "path0:path1:path2:path3";
-			assertExpecteVarsInResult(actualResult, expectedVariables);
+			assert.deepEqual(actualResult, expectedVariables);
 		});
 	});
 
@@ -87,7 +80,7 @@ describe("getEnvironmentVariables", () => {
 		};
 
 		const actualResult = index.getEnvironmentVariables();
-		assertExpecteVarsInResult(actualResult, expectedVariables);
+		assert.deepEqual(actualResult, expectedVariables);
 	});
 
 	it("prints warning when environment variable does not match expected format", () => {
@@ -141,7 +134,7 @@ describe("getEnvironmentVariables", () => {
 		processWrapper.getProcessPlatform = () => "win32";
 
 		const actualResult = index.getEnvironmentVariables();
-		assert.deepEqual(actualResult, process.env);
+		assert.deepEqual(actualResult, processWrapper.getEnv());
 	});
 
 	const emptyTestData = [
@@ -161,7 +154,7 @@ describe("getEnvironmentVariables", () => {
 			childProcess.execSync = (command) => value;
 
 			const actualResult = index.getEnvironmentVariables();
-			assert.deepEqual(actualResult, process.env);
+			assert.deepEqual(actualResult, processWrapper.getEnv());
 		});
 	});
 
@@ -187,7 +180,7 @@ describe("getEnvironmentVariables", () => {
 
 		console.error = originalConsoleErr;
 
-		assert.deepEqual(actualResult, process.env);
+		assert.deepEqual(actualResult, processWrapper.getEnv());
 
 		assert.deepEqual(loggedErrors.length, 5);
 
@@ -195,10 +188,10 @@ describe("getEnvironmentVariables", () => {
 	});
 
 	const verifySourceCommand = (shellEnv) => {
-		let originalShellEnv = process.env.SHELL;
-		process.env.SHELL = shellEnv;
+		processWrapper.getEnv = () => ({ SHELL: shellEnv });
 
 		const expectedVariables = {
+			SHELL: shellEnv,
 			"VAR1": "1"
 		};
 
@@ -216,10 +209,7 @@ describe("getEnvironmentVariables", () => {
 
 		const actualResult = index.getEnvironmentVariables();
 
-		process.env.SHELL = originalShellEnv;
-
-		// assert.deepEqual(actualResult, expectedVariables);
-		assertExpecteVarsInResult(actualResult, expectedVariables);
+		assert.deepEqual(actualResult, expectedVariables);
 		assert.isTrue(passedCommandArgument.indexOf(shellEnv) !== -1);
 	};
 
