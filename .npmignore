@@ -36,3 +36,6 @@ xunit.xml
 
 coverage
 .travis.yml
+
+.vscode
+runScript.js
