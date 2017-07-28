@@ -12,23 +12,22 @@ const etcPaths = "/etc/paths";
 
 describe("getEnvironmentVariables", () => {
 	const readFileSync = fs.readFileSync;
-	const exists = fs.exists;
+	const existsSync = fs.existsSync;
 	const execSync = childProcess.execSync;
 
 	beforeEach(() => {
 		processWrapper.getProcessPlatform = () => "tests";
 	});
 
-	after(() => {
+	afterEach(() => {
 		processWrapper.getProcessPlatform = originalGetProcessPlatform;
 		fs.readFileSync = readFileSync;
-		fs.exists = exists;
+		fs.existsSync = existsSync;
 		childProcess.execSync = execSync;
 	});
 
 	describe(`uses ${etcPaths}`, () => {
 		it("when there's PATH variable in it", () => {
-			let fs = require("fs");
 			fs.existsSync = (filePath) => filePath === etcPaths;
 			fs.readFileSync = (filePath, encoding) => 'path1\npath2\npath3';
 
@@ -41,7 +40,6 @@ describe("getEnvironmentVariables", () => {
 				"PATH": "path0"
 			};
 
-			let childProcess = require("child_process");
 			childProcess.execSync = (command) => {
 				return _.map(expectedVariables, (value, key) => {
 					return `${key}=${value}`;
@@ -57,7 +55,6 @@ describe("getEnvironmentVariables", () => {
 	});
 
 	it("returns correct variables", () => {
-		let fs = require("fs");
 		fs.existsSync = (filePath) => {
 			return filePath !== etcPaths;
 		};
@@ -82,7 +79,6 @@ describe("getEnvironmentVariables", () => {
 	});
 
 	it("prints warning when environment variable does not match expected format", () => {
-		let fs = require("fs");
 		fs.existsSync = (filePath) => {
 			return filePath !== etcPaths;
 		};
@@ -91,7 +87,6 @@ describe("getEnvironmentVariables", () => {
 			"": "1"
 		};
 
-		let childProcess = require("child_process");
 		childProcess.execSync = (command) => {
 			return _.map(expectedVariables, (value, key) => {
 				return `${key}=${value}`;
@@ -115,14 +110,12 @@ describe("getEnvironmentVariables", () => {
 	});
 
 	it("returns process.env on windows", () => {
-		let fs = require("fs");
 		fs.existsSync = (filePath) => true;
 
 		const expectedVariables = {
 			"VAR1": "1"
 		};
 
-		let childProcess = require("child_process");
 		childProcess.execSync = (command) => {
 			return _.map(expectedVariables, (value, key) => {
 				return `${key}=${value}`;
@@ -143,12 +136,10 @@ describe("getEnvironmentVariables", () => {
 
 	_.each(emptyTestData, value => {
 		it(`returns process.env when child process does not return any data (${value})`, () => {
-			let fs = require("fs");
 			fs.existsSync = (filePath) => {
 				return filePath !== etcPaths;
 			};
 
-			let childProcess = require("child_process");
 			childProcess.execSync = (command) => value;
 
 			const actualResult = index.getEnvironmentVariables();
@@ -157,12 +148,10 @@ describe("getEnvironmentVariables", () => {
 	});
 
 	it(`returns process.env when child process throws`, () => {
-		let fs = require("fs");
 		fs.existsSync = (filePath) => {
 			return filePath !== etcPaths;
 		};
 
-		let childProcess = require("child_process");
 		const message = "execSyncThrows";
 		childProcess.execSync = (command) => {
 			throw new Error(message);
@@ -186,16 +175,16 @@ describe("getEnvironmentVariables", () => {
 	});
 
 	const verifySourceCommand = (shellEnv) => {
-		let originalShellEnv = process.env.SHELL;
+		const originalShellEnv = process.env.SHELL;
 		process.env.SHELL = shellEnv;
+
+		fs.existsSync = (filePath) => false;
 
 		const expectedVariables = {
 			"VAR1": "1"
 		};
 
 		let passedCommandArgument;
-
-		let childProcess = require("child_process");
 
 		childProcess.execSync = (command) => {
 			passedCommandArgument = command;
@@ -213,6 +202,34 @@ describe("getEnvironmentVariables", () => {
 
 		assert.isTrue(passedCommandArgument.indexOf(shellEnv) !== -1);
 	};
+
+	it("works when iTerm shell integration is enabled", () => {
+		const str = Buffer.from(`Now using node v7.6.0 (npm v5.0.0)
+\u001b]1337;RemoteHost=username@machinename\u0007\u001b]1337;CurrentDir=/Users/username/Work/get-shell-vars\u0007\u001b]1337;ShellIntegrationVersion=5;shell=bash\u0007MANPATH=/Users/username/.nvm/versions/node/v7.6.0/share/man:/usr/share/man:/usr/local/share/man:/Applications/Xcode.app/Contents/Developer/usr/share/man:/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/share/man
+TERM_PROGRAM=Apple_Terminal`);
+		const originalShellEnv = process.env.SHELL;
+		process.env.SHELL = ".bash_profile";
+		fs.existsSync = (filePath) => filePath === etcPaths;
+		fs.readFileSync = (filePath, encoding) => 'path1\npath2\npath3';
+
+		const expectedVariables = {
+			"MANPATH": "/Users/username/.nvm/versions/node/v7.6.0/share/man:/usr/share/man:/usr/local/share/man:/Applications/Xcode.app/Contents/Developer/usr/share/man:/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/share/man",
+			"TERM_PROGRAM": "Apple_Terminal",
+			"PATH": "path1:path2:path3"
+		};
+
+		let passedCommandArgument;
+
+		childProcess.execSync = (command) => {
+			passedCommandArgument = command;
+
+			return str;
+		};
+
+		const actualResult = index.getEnvironmentVariables();
+		process.env.SHELL = originalShellEnv;
+		assert.deepEqual(actualResult, expectedVariables);
+	});
 
 	it("when default shell is not set, uses bash", () => {
 		verifySourceCommand(".bash_profile", '');
