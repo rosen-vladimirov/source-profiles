@@ -18,9 +18,6 @@ bin/*.cmd
 
 config/config-*
 
-lib/**/*.ts
-lib/**/*.js.map
-
 scratch/
 test/
 **/docs/html
