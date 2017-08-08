@@ -40,6 +40,196 @@ describe("getEnvironmentVariables", () => {
 		process.env.SHELL = shellEnvVar;
 	});
 
+	const testCustomConfigurations = ({ usingNodejs }) => {
+
+		const customShell = "myShell";
+
+		const customConfigScenarios = [
+			{
+				userConfig: {
+					shell: customShell
+				},
+				expectedOutputs: {
+					linux: `"${customShell}" -ic`,
+					darwin: `"${customShell}" -ilc`
+				}
+			},
+
+			{
+				userConfig: {
+					terminalConfiguration: {
+						isLogin: true,
+						isInteractive: false
+					}
+				},
+				expectedOutputs: {
+					linux: `"/bin/bash" -lc`,
+					darwin: `"/bin/bash" -lc`
+				}
+			},
+
+			{
+				userConfig: {
+					shell: customShell,
+					terminalConfiguration: {
+						isLogin: true
+					}
+				},
+				expectedOutputs: {
+					linux: `"${customShell}" -ilc`,
+					darwin: `"${customShell}" -ilc`
+				}
+			},
+
+			{
+				userConfig: {
+					shell: customShell,
+					terminalConfiguration: {
+						isLogin: false
+					}
+				},
+				expectedOutputs: {
+					linux: `"${customShell}" -ic`,
+					darwin: `"${customShell}" -ic`
+				}
+			},
+
+			{
+				userConfig: {
+					shell: customShell,
+					terminalConfiguration: {
+						isInteractive: true
+					}
+				},
+				expectedOutputs: {
+					linux: `"${customShell}" -ic`,
+					darwin: `"${customShell}" -ilc`
+				}
+			},
+
+			{
+				userConfig: {
+					shell: customShell,
+					terminalConfiguration: {
+						isInteractive: false
+					}
+				},
+				expectedOutputs: {
+					linux: `"${customShell}" -c`,
+					darwin: `"${customShell}" -lc`
+				}
+			},
+
+			{
+				userConfig: {
+					shell: customShell,
+					terminalConfiguration: {
+						isLogin: true,
+						isInteractive: true
+					}
+				},
+				expectedOutputs: {
+					linux: `"${customShell}" -ilc`,
+					darwin: `"${customShell}" -ilc`
+				}
+			},
+
+			{
+				userConfig: {
+					shell: customShell,
+					terminalConfiguration: {
+						isLogin: true,
+						isInteractive: false
+					}
+				},
+				expectedOutputs: {
+					linux: `"${customShell}" -lc`,
+					darwin: `"${customShell}" -lc`
+				}
+			},
+
+			{
+				userConfig: {
+					shell: customShell,
+					terminalConfiguration: {
+						isLogin: false,
+						isInteractive: true
+					}
+				},
+				expectedOutputs: {
+					linux: `"${customShell}" -ic`,
+					darwin: `"${customShell}" -ic`
+				}
+			},
+
+			{
+				userConfig: {
+					shell: customShell,
+					terminalConfiguration: {
+						isLogin: false,
+						isInteractive: false
+					}
+				},
+				expectedOutputs: {
+					linux: `"${customShell}" -c`,
+					darwin: `"${customShell}" -c`
+				}
+			}
+		];
+
+		const platforms = ["linux", "darwin"];
+
+		_.each(platforms, platform => {
+
+			_.each(customConfigScenarios, (testCase, testCaseIndex) => {
+
+				it(`when ${usingNodejs ? "using Node.js" : "using env"} on ${platform} respects custom configuration, test case ${testCaseIndex}`, () => {
+					processWrapper.getProcessPlatform = () => platform;
+					process.env.SHELL = "";
+					fs.existsSync = (filePath) => filePath !== etcPaths;
+
+					const execSyncCommands = [];
+					childProcess.execSync = (command) => {
+						execSyncCommands.push(command);
+						if (usingNodejs) {
+							if (command.indexOf("node") !== -1) {
+								return "";
+							}
+
+							throw new Error("You shouldn't get here!");
+						} else {
+							if (command.indexOf("node") !== -1) {
+								throw new Error("Node.js fails");
+							}
+
+							return _.map(defaultExpectedVariables, (value, key) => `${key}=${value}`).join('\n');
+						}
+					};
+
+					fs.readFileSync = (filePath, encoding) => JSON.stringify(defaultExpectedVariables);
+
+					// Modify console.log, in order to hide message for missing Node.js
+					console.log = () => undefined;
+					const actualResult = index.getEnvironmentVariables(testCase.userConfig);
+					const executedCommandsLength = usingNodejs ? 1 : 2;
+
+					// Get back the original console.log, so mocha can print information for current test.
+					console.log = consoleLog;
+					assert.equal(execSyncCommands.length, executedCommandsLength);
+
+					_.each(execSyncCommands, command => {
+						assert.isTrue(_.startsWith(command, testCase.expectedOutputs[platform]), `The expected string is: ${testCase.expectedOutputs[platform]}, but received ${execSyncCommands[0]}.`);
+					});
+
+					assert.deepEqual(actualResult, defaultExpectedVariables);
+
+				});
+
+			});
+
+		});
+	};
+
 	describe(`uses ${etcPaths}`, () => {
 		it("when there's PATH variable in it", () => {
 			fs.existsSync = (filePath) => filePath === etcPaths;
@@ -106,6 +296,8 @@ describe("getEnvironmentVariables", () => {
 			const actualResult = index.getEnvironmentVariables();
 			assert.deepEqual(actualResult, defaultExpectedVariables);
 		});
+
+		testCustomConfigurations({ usingNodejs: true });
 	});
 
 	describe("when env is used", () => {
@@ -263,6 +455,8 @@ TERM_PROGRAM=Apple_Terminal`);
 		it("uses custom shell, when bash is not default and default shell is not full path", () => {
 			verifySourceCommand(".zshrc", "zsh");
 		});
+
+		testCustomConfigurations({ usingNodejs: false });
 	});
 
 });
