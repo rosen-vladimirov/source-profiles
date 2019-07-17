@@ -1,6 +1,6 @@
 {
   "name": "get-shell-vars",
-  "version": "3.0.1",
+  "version": "3.0.2",
   "description": "Code that sources correct profiles, so that you can use all Environment variables declared in them.",
   "main": "./lib/index.js",
   "scripts": {
@@ -32,7 +32,7 @@
     "spec-xunit-file": "0.0.1-3"
   },
   "dependencies": {
-    "lodash": "4.17.11",
+    "lodash": "4.17.14",
     "temp": "0.8.3"
   }
 }
